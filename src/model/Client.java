@@ -1,3 +1,9 @@
+package model;
+
+import DTO.Devices;
+import DTO.GetDataRequest;
+import util.OutputToConsole;
+
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
@@ -42,6 +48,7 @@ public class Client {
             receiveMessageFromServer();
         }catch (Exception ex){
             OutputToConsole.printErrorMessageToConsole(ex.getMessage());
+            closeIOStreamsAndConnection();
         }
     }
 
@@ -113,11 +120,12 @@ public class Client {
      */
     private  void sendMessage(String message){
         try{
-            outputStream.writeObject(new TransferObject(message));
+            outputStream.writeObject(new GetDataRequest("devices"));
             outputStream.flush();
 
             OutputToConsole.printMessageToConsole("Message sent!");
         }catch (IOException ioEx){
+            ioEx.printStackTrace();
             OutputToConsole.printErrorMessageToConsole("Could not send message!");
         }
     }
@@ -129,17 +137,18 @@ public class Client {
     private void receiveMessageFromServer(){
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             public void run() {
-                while(true){
-                    try{
-                        TransferObject received = (TransferObject)inputStream.readObject();
-                        OutputToConsole.printMessageToConsole("Received message: \n" + received.getMessage());
-                    }catch (ClassNotFoundException CNFEx){
-                        OutputToConsole.printErrorMessageToConsole("Unknown object received!");
-                    }catch (IOException IOEx){
-                        IOEx.printStackTrace();
-                        OutputToConsole.printErrorMessageToConsole("Could not receive object!");
-                    }
+            while(true){
+                try{
+                    Devices received = (Devices) inputStream.readObject();
+                    //OutputToConsole.printMessageToConsole("Received message: \n" + received.getMessage());
+                    System.out.println(received);
+                }catch (ClassNotFoundException CNFEx){
+                    OutputToConsole.printErrorMessageToConsole("Unknown object received!");
+                }catch (IOException IOEx){
+                    IOEx.printStackTrace();
+                    OutputToConsole.printErrorMessageToConsole("Could not receive object!");
                 }
+            }
             }
         });
     }
@@ -156,7 +165,7 @@ public class Client {
                 outputStream.close();
             if(inputStream != null)
                 inputStream.close();
-            if(!connection.isClosed())
+            if(connection != null)
                 connection.close();
             System.exit(0);
         }catch (Exception ex){

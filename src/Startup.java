@@ -1,3 +1,5 @@
+import model.Client;
+
 /**
  * Start SSL client
  */
